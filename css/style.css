@@ -1,0 +1,26 @@
+body {
+    display: flex;
+    justify-content: center;
+    background-color: grey;
+}
+img {
+    display: none
+}
+#game {
+    padding: 0;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 50px;
+    position: relative;
+    border: 5px solid black;
+    background-image: url("../asset/background.png");
+}
+#doodle {
+    /* position: absolute; */
+    width: auto;
+    height: 80px;
+    z-index: 1;
+}
+#block{
+    position: absolute;
+}
