@@ -4,15 +4,35 @@
 	<meta name="viewport"
 		  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
 	<title>Space Invaders</title>
+	<link rel="preconnect" href="https://fonts.gstatic.com">
+	<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css" rel="stylesheet">
 	<link href="css/style.css" rel="stylesheet">
+
 </head>
 <body>
+	<div class="body">
+		<canvas id="game" width="400" height="700">
+			Désolé, votre navigateur ne prend pas en charge canvas
+		</canvas>
+		<p id="score">0</p>
+		<div id="command">
+			<p>Déplacement : Flèche droite et gauche</p>
+			<p>Pause : space</p>
+		</div>
+		<div id="mainMenu">
+			<div>
+				<h1>Doodle Jump</h1>
+				<h1>Clément Gladin</h1>
+			</div>
+		</div>
 
-	<canvas id="game" width="400" height="700">
-		Désolé, votre navigateur ne prend pas en charge canvas
-	</canvas>
-	<img id="sprite" src="asset/sprite.png" alt="sprite">
+		<div id="gameOverMenu">
+			<h1>Game Over!</h1>
+			<h3>You scored <span id="gameOverScore">0</span> points</h3>
+		</div>
+		<img id="sprite" src="asset/sprites.png" alt="sprite">
+	</div>
 	<script src="js/app.js"></script>
 </body>
 </html>

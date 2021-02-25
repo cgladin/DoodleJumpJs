@@ -1,5 +1,5 @@
 class Entity {
-    constructor(x,y,width,height) {
+    constructor(x, y, width, height) {
         //position
         this.x = x;
         this.y = y;
@@ -13,9 +13,9 @@ class Entity {
 
 }
 
-class Doodle extends Entity{
+class Doodle extends Entity {
     constructor(x, y) {
-        super(x,y,55,40)
+        super(x, y, 55, 40)
         //deplacement
         this.vy = 10;
         this.vx = 0;
@@ -33,7 +33,7 @@ class Doodle extends Entity{
         this.stateMovingRight = false;
 
         this.gravity = 0.2;
-        this.jumpHeight = 200;
+        this.jumpHeight = 164; //car -8 - 0.2 à chaque frame il parcours 164 quand vy =0
         this.dirSprite = "right";
 
         //clipping de l'image en fonction de la direction
@@ -56,17 +56,21 @@ class Doodle extends Entity{
         );
     }
 
-    move(width) {
+    moveX(width) {
         if (this.stateMovingRight === true || this.stateMovingLeft === true) {
             if (this.stateMovingRight === true) {
                 this.x += this.vx;
-                this.vx += 0.1;//augmente la vitesse de déplacement
-                if (this.vx > this.vMax) this.vx = this.vMax; //limit la vitesse
+                //augmente la vitesse de déplacement
+                this.vx += 0.1;
+                //limit la vitesse
+                if (this.vx > this.vMax) this.vx = this.vMax;
             }
             if (this.stateMovingLeft === true) {
                 this.x += this.vx;
-                this.vx -= 0.1; //augmente la vitesse de déplacement
-                if (this.vx < -this.vMax) this.vx = -this.vMax; //limit la vitesse
+                //augmente la vitesse de déplacement
+                this.vx -= 0.1;
+                //limit la vitesse
+                if (this.vx < -this.vMax) this.vx = -this.vMax;
             }
         } else {
             this.x += this.vx;
@@ -87,29 +91,31 @@ class Doodle extends Entity{
     }
 
     isAffectByGravity(height) {
-        //affecte le doodle de la gravité si il dépasse le centre du canvas
-        if (this.y >= (height / 2) - (this.height / 2)) {
+        if (!((this.y < (height / 2) - (this.height / 2)) && this.vy < 0)) {
             this.affectByGravity();
             return true;
+        } else {
+            this.y = (height / 2) - (this.height / 2) - 1;
+            return false
         }
-        return false;
     }
 
-    affectByGravity(){
+    affectByGravity() {
         this.y += this.vy;
         this.vy += this.gravity;
     }
 
     jump() {
+        //déplace de 8 pixel à chaque frame vers le haut
         this.vy = -8;
     }
 }
 
-class Block extends Entity{
-    constructor(x, y,width,height) {
-        super(x,y,width,height)
+class Block extends Entity {
+    constructor(x, y, width, height) {
+        super(x, y, width, height)
 
-        //Sprite clipping
+        //Sprite clipping 
         this.cx = 0;
         this.cy = 0;
         this.cwidth = 0;
@@ -125,13 +131,13 @@ class Block extends Entity{
     }
 
     collision(x, y, width, height) {
-        return ((x >= this.x && x <= this.x + this.width) || (x + width >= this.x && x + width <= this.x + this.width)) && (y - height <= this.y && y - height >= this.y - this.height);
+        return ((x >= this.x && x <= this.x + this.width) || (x + width >= this.x && x + width <= this.x + this.width)) && (y - height <= this.y && y + height >= this.y - this.height);
     }
 }
 
-class Platform extends Block{
-    constructor(x,y) {
-        super(x,y,60,17.5);
+class Platform extends Block {
+    constructor(x, y) {
+        super(x, y, 60, 17.5);
 
         //Sprite clipping
         this.cx = 0;
@@ -144,39 +150,63 @@ class Platform extends Block{
 }
 
 class BasePlatform extends Block {
-    constructor(width,height) {
-        super(0,height-5,width,5);
+    constructor(width, height) {
+        super(0, height - 5, width, 5);
         //Sprite clipping
         this.cx = 0;
         this.cy = 614;
-        this.cwidth = this.width;
+        this.cwidth = 100;
         this.cheight = 5;
+    }
+}
+
+class Monster extends Block {
+    constructor(x, y) {
+        super(x, y, 50, 60);
+
+        //Sprite clipping
+        this.cx = 0;
+        this.cy = 630;
+        this.cwidth = 110;
+        this.cheight = 140;
     }
 }
 
 class Game {
     constructor() {
+        this.menu();
+    }
+    menu() {
+        let menu = document.querySelector('#mainMenu');
 
-        this.blocks = [];
-        this.nbBlock = 8;
-        this.score = 0;
+        this.buttonEvent(menu,"Play");
+    }
+
+    initGame() {
         this.ctx = document.querySelector("#game").getContext("2d");
 
         this.height = this.ctx.canvas.height;
         this.width = this.ctx.canvas.width;
 
-        this.doodle = new Doodle(Math.floor(this.width / 2) - 40, this.height - 140);//40 car l'image fais 80px
+        this.blocks = [];
+        this.nbBlock = 8;
+        this.score = 0;
 
         this.event();
-        this.blocks.push(new Block(Math.floor(this.width) - 60, this.height - 50));//60 width block
+
+        this.doodle = new Doodle(Math.floor(this.width / 2) - 40, this.height - 140);
+
+        this.blocks.push(new Platform(Math.floor(this.width) - 60, this.height - 50));
         this.blockSpawner();
-        this.base= new BasePlatform(this.width,this.height);
+        this.base = new BasePlatform(this.width, this.height);
 
         this.animationID = window.requestAnimationFrame(this.start.bind(this));
     }
 
     start() {
         this.ctx.clearRect(0, 0, this.width, this.height);
+        this.base.draw(this.ctx);
+
         this.findCollision()
         this.doodle.draw(this.ctx)
         this.blocks.forEach(b => {
@@ -188,7 +218,31 @@ class Game {
         if (this.doodle.vy < -7 && this.doodle.vy > -15) this.doodle.dir = "left_jump";
         //si le doodle est deplacement vertical
         if (this.doodle.vy < -7 && this.doodle.vy > -15) this.doodle.dir = "right_jump";
-        this.animationID = window.requestAnimationFrame(this.start.bind(this));
+
+        this.updateScore();
+
+        if(this.gameOver() !== true)
+            this.animationID = window.requestAnimationFrame(this.start.bind(this));
+    }
+
+    gameOver() {
+        if(this.doodle.y > this.height) {
+            this.pause();
+            this.ctx.clearRect(0, 0, this.width, this.height);
+
+            let menu = document.querySelector("#gameOverMenu");
+            let score= document.querySelector("#score");
+            let scoreGO= document.querySelector("#gameOverScore");
+
+            scoreGO.textContent=this.score;
+
+            menu.style.zIndex="2";
+            score.style.zIndex="-1";
+
+            this.buttonEvent(menu,"Restart");
+            return true;
+        }
+        return false;
     }
 
     pause() {
@@ -196,14 +250,26 @@ class Game {
         this.animationID = undefined;
     }
 
+    buttonEvent(menu,txtContent){
+        let button = document.createElement("div");
+        button.className="button";
+        button.textContent=txtContent;
+
+        menu.appendChild(button);
+        button.addEventListener("click",()=> {
+            menu.removeChild(button);
+            menu.style.zIndex="-1";
+            let scoreDOM= document.querySelector("#score");
+            scoreDOM.style.zIndex="2";
+            this.initGame();
+        });
+    }
+
     event() {
         document.addEventListener('keydown', ev => {
             switch (ev.code) {
                 case "Space":
                     this.animationID ? this.pause() : this.start();
-                    break;
-                case "Enter":
-                    this.restart();
                     break;
                 case "ArrowLeft":
                     if (this.animationID) {
@@ -232,38 +298,47 @@ class Game {
                     }
                     break;
             }
-        })
+        });
     }
 
     blockSpawner() {
         for (let i = 1; i < this.nbBlock; i++) {
             let yPrevious = this.blocks[i - 1].y + this.blocks[i - 1].height;
             let yMax = yPrevious - this.doodle.jumpHeight - this.doodle.height;
+
             if (yMax < 0) yMax = 0;
             let x = Math.floor(Math.random() * (this.width - this.blocks[i - 1].width));
             let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
-            this.blocks[i] = new Block(x, y);
+
+            this.blocks[i] = new Platform(x, y);
         }
     }
 
     findCollision() {
         this.blocks.forEach(block => {
             if (block.collision(this.doodle.x, this.doodle.y, this.doodle.width, this.doodle.height)) {
-                this.doodle.fallingState = false;
+                this.doodle.jump();
             }
         });
+        if (this.base.collision(this.doodle.x, this.doodle.y, this.doodle.width, this.doodle.height) && this.base.y < this.height) {
+            this.doodle.jump();
+        }
     }
 
     moveDoodle() {
-        this.doodle.move(this.width);//on envoie les dimensions pour les contrainte de déplacement
+        //on envoie les dimensions pour les contrainte de déplacement
+        this.doodle.moveX(this.width);
         let isAffectByGravity = this.doodle.isAffectByGravity(this.height);
+
         if (isAffectByGravity === false) {
+            this.moveBase();
             this.moveBlock();
-            if (this.doodle.vy >= 0) { //si le doodle tombe
-                this.doodle.affectByGravity();
-            }
+
+            this.doodle.affectByGravity();
+
             this.score++;
         }
+
     }
 
     moveBlock() {
@@ -272,10 +347,22 @@ class Game {
                 block.y -= this.doodle.vy; //on déplace le block
             }
             if (block.y > this.height) { //si un block sort du jeu
-                this.blocks[i] = new Platform();
+                let x = Math.floor(Math.random() * (this.width - this.blocks[i].width));
+                this.blocks[i] = new Platform(x, 0);
                 this.blocks[i].y = block.y - this.height;
             }
         })
+    }
+
+    moveBase() {
+        if (this.base.y < this.height) {
+            this.base.y -= this.doodle.vy;
+        }
+    }
+
+    updateScore() {
+        let scoreDiv = document.querySelector("#score");
+        scoreDiv.innerHTML = this.score;
     }
 
 }
