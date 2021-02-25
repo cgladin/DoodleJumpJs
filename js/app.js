@@ -33,7 +33,9 @@ class Doodle extends Entity {
         this.stateMovingRight = false;
 
         this.gravity = 0.2;
+
         this.jumpHeight = 164; //car -8 - 0.2 à chaque frame il parcours 164 quand vy =0
+
         this.dirSprite = "right";
 
         //clipping de l'image en fonction de la direction
@@ -112,8 +114,8 @@ class Doodle extends Entity {
 }
 
 class Block extends Entity {
-    constructor(x, y, width, height) {
-        super(x, y, width, height)
+    constructor(width, height) {
+        super(0, 0, width, height)
 
         //Sprite clipping 
         this.cx = 0;
@@ -133,11 +135,16 @@ class Block extends Entity {
     collision(x, y, width, height) {
         return ((x >= this.x && x <= this.x + this.width) || (x + width >= this.x && x + width <= this.x + this.width)) && (y - height <= this.y && y + height >= this.y - this.height);
     }
+
+    setXAndY(x, y) {
+        this.x = x;
+        this.y = y;
+    }
 }
 
 class Platform extends Block {
-    constructor(x, y) {
-        super(x, y, 60, 17.5);
+    constructor() {
+        super(60, 17.5);
 
         //Sprite clipping
         this.cx = 0;
@@ -151,12 +158,13 @@ class Platform extends Block {
 
 class BasePlatform extends Block {
     constructor(width, height) {
-        super(0, height - 5, width, 5);
+        super(width, 5);
         //Sprite clipping
         this.cx = 0;
         this.cy = 614;
         this.cwidth = 100;
         this.cheight = 5;
+        this.setXAndY(0, height - 5);
     }
 }
 
@@ -176,10 +184,11 @@ class Game {
     constructor() {
         this.menu();
     }
+
     menu() {
         let menu = document.querySelector('#mainMenu');
 
-        this.buttonEvent(menu,"Play");
+        this.buttonEvent(menu, "Play");
     }
 
     initGame() {
@@ -196,8 +205,8 @@ class Game {
 
         this.doodle = new Doodle(Math.floor(this.width / 2) - 40, this.height - 140);
 
-        this.blocks.push(new Platform(Math.floor(this.width) - 60, this.height - 50));
         this.blockSpawner();
+
         this.base = new BasePlatform(this.width, this.height);
 
         this.animationID = window.requestAnimationFrame(this.start.bind(this));
@@ -221,25 +230,25 @@ class Game {
 
         this.updateScore();
 
-        if(this.gameOver() !== true)
+        if (this.gameOver() !== true)
             this.animationID = window.requestAnimationFrame(this.start.bind(this));
     }
 
     gameOver() {
-        if(this.doodle.y > this.height) {
+        if (this.doodle.y > this.height) {
             this.pause();
             this.ctx.clearRect(0, 0, this.width, this.height);
 
             let menu = document.querySelector("#gameOverMenu");
-            let score= document.querySelector("#score");
-            let scoreGO= document.querySelector("#gameOverScore");
+            let score = document.querySelector("#score");
+            let scoreGO = document.querySelector("#gameOverScore");
 
-            scoreGO.textContent=this.score;
+            scoreGO.textContent = this.score;
 
-            menu.style.zIndex="2";
-            score.style.zIndex="-1";
+            menu.style.zIndex = "2";
+            score.style.zIndex = "-1";
 
-            this.buttonEvent(menu,"Restart");
+            this.buttonEvent(menu, "Restart");
             return true;
         }
         return false;
@@ -250,17 +259,17 @@ class Game {
         this.animationID = undefined;
     }
 
-    buttonEvent(menu,txtContent){
+    buttonEvent(menu, txtContent) {
         let button = document.createElement("div");
-        button.className="button";
-        button.textContent=txtContent;
+        button.className = "button";
+        button.textContent = txtContent;
 
         menu.appendChild(button);
-        button.addEventListener("click",()=> {
+        button.addEventListener("click", () => {
             menu.removeChild(button);
-            menu.style.zIndex="-1";
-            let scoreDOM= document.querySelector("#score");
-            scoreDOM.style.zIndex="2";
+            menu.style.zIndex = "-1";
+            let scoreDOM = document.querySelector("#score");
+            scoreDOM.style.zIndex = "2";
             this.initGame();
         });
     }
@@ -302,21 +311,26 @@ class Game {
     }
 
     blockSpawner() {
-        for (let i = 1; i < this.nbBlock; i++) {
-            let yPrevious = this.blocks[i - 1].y + this.blocks[i - 1].height;
-            let yMax = yPrevious - this.doodle.jumpHeight - this.doodle.height;
+        this.blocks.push(new Platform());
+        this.blocks[0].setXAndY(Math.floor(this.width - this.blocks[0].width), 50);
 
-            if (yMax < 0) yMax = 0;
-            let x = Math.floor(Math.random() * (this.width - this.blocks[i - 1].width));
+        for (let i = 1; i < this.nbBlock; i++) {
+            this.blocks[i] = new Platform();
+
+            let yPrevious = this.blocks[i - 1].y + this.blocks[i - 1].height;
+            let yMax = yPrevious + this.doodle.jumpHeight;
+
+            let x = Math.floor(Math.random() * (this.width - this.blocks[i].width));
             let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
 
-            this.blocks[i] = new Platform(x, y);
+            this.blocks[i].setXAndY(x, y);
         }
+        this.g =this.blocks[this.nbBlock-1];
     }
 
     findCollision() {
         this.blocks.forEach(block => {
-            if (block.collision(this.doodle.x, this.doodle.y, this.doodle.width, this.doodle.height)) {
+            if (block.collision(this.doodle.x, this.doodle.y, this.doodle.width, this.doodle.height) && this.doodle.vy > 0) {
                 this.doodle.jump();
             }
         });
@@ -342,14 +356,24 @@ class Game {
     }
 
     moveBlock() {
-        this.blocks.forEach((block, i) => {
+        let lowerBlock = this.blocks[this.nbBlock-1];
+
+        if (lowerBlock.y > this.height) { //si un block sort du jeu
+            this.blocks.pop()
+
+            this.blocks.unshift(new Platform()); //ajoute au début du tableau
+
+            let yPrevious = this.blocks[1].y + this.blocks[1].height;
+            let yMax = yPrevious + this.doodle.jumpHeight;
+
+            let x = Math.floor(Math.random() * (this.width - this.blocks[0].width));
+            let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
+
+            this.blocks[this.nbBlock - 1].setXAndY(x, y);
+        }
+        this.blocks.forEach(block => {
             if (this.doodle.vy < 0) { //si le doodle saute
                 block.y -= this.doodle.vy; //on déplace le block
-            }
-            if (block.y > this.height) { //si un block sort du jeu
-                let x = Math.floor(Math.random() * (this.width - this.blocks[i].width));
-                this.blocks[i] = new Platform(x, 0);
-                this.blocks[i].y = block.y - this.height;
             }
         })
     }
