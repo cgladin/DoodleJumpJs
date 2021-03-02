@@ -114,9 +114,9 @@ class Doodle extends Entity {
 }
 
 class Block extends Entity {
-    constructor(width, height) {
+    constructor(width, height,type) {
         super(0, 0, width, height)
-
+        this.type=type;
         //Sprite clipping 
         this.cx = 0;
         this.cy = 0;
@@ -143,22 +143,52 @@ class Block extends Entity {
 }
 
 class Platform extends Block {
-    constructor() {
-        super(60, 17.5);
+    constructor(type = 1) {
+        super(60, 17.5,type);
 
-        //Sprite clipping
-        this.cx = 0;
-        this.cy = 0;
-        this.cwidth = 105;
-        this.cheight = 31;
+        this.setSpriteClippingByType();
+    }
 
-        this.type = 1;
+    //Sprite clipping
+    setSpriteClippingByType(){
+        /*
+         * type:
+         * 1 : plateforme normale
+         * 2 : plateforme qui se déplace horizontallement
+         * 3 : plateforme pourrie
+         * 3.5 : animation platforme pourrie
+         * 4 : plateforme qui se déplace verticalement
+         */
+        if(this.type === 1){
+            this.cx = 0;
+            this.cy = 0;
+            this.cwidth = 105;
+            this.cheight = 31;
+        }
+        if(this.type === 2 || this.type === 4 ){
+            this.cx = 0;
+            this.cy = 60;
+            this.cwidth = 105;
+            this.cheight = 31;
+        }
+        if(this.type === 3){
+            this.cx = 0;
+            this.cy = 30;
+            this.cwidth = 105;
+            this.cheight = 31;
+        }
+        if(this.type === 3.5){
+            this.cx = 0;
+            this.cy = 555;
+            this.cwidth = 105;
+            this.cheight = 55;
+        }
     }
 }
 
 class BasePlatform extends Block {
     constructor(width, height) {
-        super(width, 5);
+        super(width, 5,0);
         //Sprite clipping
         this.cx = 0;
         this.cy = 614;
@@ -169,8 +199,8 @@ class BasePlatform extends Block {
 }
 
 class Monster extends Block {
-    constructor(x, y) {
-        super(x, y, 50, 60);
+    constructor(type) {
+        super(50, 60,type);
 
         //Sprite clipping
         this.cx = 0;
@@ -205,7 +235,7 @@ class Game {
 
         this.doodle = new Doodle(Math.floor(this.width / 2) - 40, this.height - 140);
 
-        this.blockSpawner();
+        this.blockInit();
 
         this.base = new BasePlatform(this.width, this.height);
 
@@ -226,7 +256,7 @@ class Game {
         if (this.doodle.vy < -7 && this.doodle.vy > -15) this.doodle.dir = "left_jump";
         //si le doodle est deplacement vertical
         if (this.doodle.vy < -7 && this.doodle.vy > -15) this.doodle.dir = "right_jump";
-	
+
         this.updateScore();
 
         if (this.gameOver() !== true)
@@ -309,7 +339,7 @@ class Game {
         });
     }
 
-    blockSpawner() {
+    blockInit() {
         this.blocks.push(new Platform());
         this.blocks[0].setXAndY(Math.floor(this.width - this.blocks[0].width), 50);
 
@@ -323,11 +353,11 @@ class Game {
             let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
 
             this.blocks[i].setXAndY(x, y);
-	   
+
         }
         this.maxplateforme = this.blocks[0].y;
         this.tailleLastPlateforme = this.blocks[0].height;
-        this.g =this.blocks[this.nbBlock-1];
+        this.g = this.blocks[this.nbBlock - 1];
     }
 
     findCollision() {
@@ -350,7 +380,6 @@ class Game {
             this.moveBase();
             this.moveBlock();
 
-	    
             this.doodle.affectByGravity();
 
             this.score++;
@@ -359,27 +388,27 @@ class Game {
     }
 
     moveBlock() {
-	
-        let lowerBlock = this.blocks[this.nbBlock-1];
 
-        if (lowerBlock.y > this.height) { //si un block sort du jeu
+        let lowerBlock = this.blocks[this.nbBlock - 1];
+        //si un block sort du jeu
+        if (lowerBlock.y > this.height) {
             this.blocks.pop()
 
-            this.blocks.unshift(new Platform()); //ajoute au début du tableau
-		
-	        //fix pour le height
-            let yPrevious =  this.maxplateforme - this.tailleLastPlateforme;
-            let yMax = yPrevious-this.doodle.jumpHeight;
+            //ajoute au début du tableau
+            this.blocks.unshift(this.spawnBlock());
+
+            let yPrevious = this.maxplateforme - this.tailleLastPlateforme;
+            let yMax = yPrevious - this.doodle.jumpHeight;
             let x = Math.floor(Math.random() * (this.width - this.blocks[0].width));
-            let y = Math.floor(Math.random() * (yPrevious - yMax)+yMax);
+            let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
             this.blocks[0].setXAndY(x, y);
             this.maxplateforme = y;
-	        this.tailleLastPlateforme = this.blocks[0].height; 
-	    
+            this.tailleLastPlateforme = this.blocks[0].height;
+
         }
-	if (this.doodle.vy < 0) {
-        this.maxplateforme-= this.doodle.vy;
-	}
+        if (this.doodle.vy < 0) {
+            this.maxplateforme -= this.doodle.vy;
+        }
         this.blocks.forEach(block => {
             if (this.doodle.vy < 0) { //si le doodle saute
                 block.y -= this.doodle.vy; //on déplace le block
@@ -391,6 +420,32 @@ class Game {
         if (this.base.y < this.height) {
             this.base.y -= this.doodle.vy;
         }
+    }
+
+    spawnBlock() {
+        let probaType;
+        /*
+         * type:
+         * 1 : plateforme normale
+         * 2 : plateforme qui se déplace horizontallement
+         * 3 : plateforme pourrie
+         * 4 : plateforme qui se déplace verticalement
+         * 5 : plateforme avec power up
+         * 6 : monstre immobile
+         * 7 : monstre qui se déplace horizontallement
+         * 8 : monstre qui se déplace verticalement
+         */
+
+        if (this.score <= 500) probaType = [1];
+        else if (this.score <= 1000) probaType = [1, 1, 1, 1, 1, 2, 2];
+        else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 7, 7];
+
+        let type = probaType[Math.floor(Math.random() * probaType.length)];
+
+        if(type >= 1 && type < 6) return new Platform(type);
+
+        if(type >= 6 && type <= 8) return new Monster(type);
+
     }
 
     updateScore() {
