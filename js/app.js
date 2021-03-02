@@ -222,14 +222,13 @@ class Game {
             b.draw(this.ctx);
         })
         this.moveDoodle();
-
         //si le doodle est deplacement vertical
         if (this.doodle.vy < -7 && this.doodle.vy > -15) this.doodle.dir = "left_jump";
         //si le doodle est deplacement vertical
         if (this.doodle.vy < -7 && this.doodle.vy > -15) this.doodle.dir = "right_jump";
-
+	
         this.updateScore();
-        console.log(this.maxplateforme)
+
         if (this.gameOver() !== true)
             this.animationID = window.requestAnimationFrame(this.start.bind(this));
     }
@@ -324,9 +323,10 @@ class Game {
             let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
 
             this.blocks[i].setXAndY(x, y);
-
+	   
         }
         this.maxplateforme = this.blocks[0].y;
+        this.tailleLastPlateforme = this.blocks[0].height;
         this.g =this.blocks[this.nbBlock-1];
     }
 
@@ -350,6 +350,7 @@ class Game {
             this.moveBase();
             this.moveBlock();
 
+	    
             this.doodle.affectByGravity();
 
             this.score++;
@@ -358,29 +359,27 @@ class Game {
     }
 
     moveBlock() {
+	
         let lowerBlock = this.blocks[this.nbBlock-1];
 
         if (lowerBlock.y > this.height) { //si un block sort du jeu
             this.blocks.pop()
 
-            //ajoute au début du tableau
-            this.blocks.unshift(new Platform());
-
+            this.blocks.unshift(new Platform()); //ajoute au début du tableau
+		
+	        //fix pour le height
             let yPrevious =  this.maxplateforme - this.tailleLastPlateforme;
             let yMax = yPrevious-this.doodle.jumpHeight;
-
             let x = Math.floor(Math.random() * (this.width - this.blocks[0].width));
             let y = Math.floor(Math.random() * (yPrevious - yMax)+yMax);
             this.blocks[0].setXAndY(x, y);
-
-            this.tailleLastPlateforme = this.blocks[0].height;
             this.maxplateforme = y;
+	        this.tailleLastPlateforme = this.blocks[0].height; 
+	    
         }
-
-        if (this.doodle.vy < 0) {
-            this.maxplateforme-= this.doodle.vy;
-        }
-
+	if (this.doodle.vy < 0) {
+        this.maxplateforme-= this.doodle.vy;
+	}
         this.blocks.forEach(block => {
             if (this.doodle.vy < 0) { //si le doodle saute
                 block.y -= this.doodle.vy; //on déplace le block
