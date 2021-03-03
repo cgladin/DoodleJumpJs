@@ -32,9 +32,11 @@ class Doodle extends Entity {
         this.stateMovingLeft = false;
         this.stateMovingRight = false;
 
-        this.gravity = 0.2;
+        this.gravity = 0.1;
 
-        this.jumpHeight = 164; //car -8 - 0.2 à chaque frame il parcours 164 quand vy =0
+        this.jumpHeight = 127; //car -5 - 0.1 à chaque frame il parcours 127.5 quand vy =0
+
+        this.isDead=false;
 
         this.dirSprite = "right";
 
@@ -108,8 +110,8 @@ class Doodle extends Entity {
     }
 
     jump() {
-        //déplace de 8 pixel à chaque frame vers le haut
-        this.vy = -8;
+        //déplace de 5 pixel à chaque frame vers le haut
+        this.vy = -5;
     }
 }
 
@@ -118,9 +120,13 @@ class Block extends Entity {
         super(0, 0, width, height)
         this.type = type;
 
-        if (this.type === 2 || this.type === 7) this.vx = 2;
+        if (this.type === 2 || this.type === 7) this.vx = 0.8;
 
-        if (this.type === 4 || this.type === 8) this.vy = 2;
+        if (this.type === 4 || this.type === 8) {
+            this.vTickMax = 100;
+            this.vTick = this.vTickMax;
+            this.vy = 0.4;
+        }
 
         //Sprite clipping 
         this.cx = 0;
@@ -137,13 +143,17 @@ class Block extends Entity {
         );
     }
 
-    collision(x, y, width, height) {
-        return ((x >= this.x && x <= this.x + this.width) || (x + width >= this.x && x + width <= this.x + this.width)) && (y - height <= this.y && y + height >= this.y - this.height);
+    collision(doodle) {
+        return ((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width)) && (doodle.y - doodle.height <= this.y && doodle.y + doodle.height >= this.y - this.height);
     }
 
     setXAndY(x, y) {
         this.x = x;
         this.y = y;
+    }
+
+    setDead() {
+        this.isDead=true;
     }
 }
 
@@ -213,6 +223,14 @@ class Monster extends Block {
         this.cwidth = 110;
         this.cheight = 140;
     }
+    collision(doodle) {
+        if(((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width)) && doodle.y <= this.y+this.height){
+            doodle.setDead();
+            return true;
+        }
+        return ((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width)) && (doodle.y - doodle.height <= this.y && doodle.y + doodle.height >= this.y - this.height);
+    }
+
 }
 
 class Game {
@@ -244,6 +262,8 @@ class Game {
 
         this.base = new BasePlatform(this.width, this.height);
 
+        this.stateGameOver = false;
+
         this.animationID = window.requestAnimationFrame(this.start.bind(this));
     }
 
@@ -265,28 +285,33 @@ class Game {
 
         this.updateScore();
 
-        if (this.gameOver() !== true)
+        this.gameOver()
+
+        if (this.stateGameOver !== true)
             this.animationID = window.requestAnimationFrame(this.start.bind(this));
     }
 
     gameOver() {
         if (this.doodle.y > this.height) {
-            this.pause();
-            this.ctx.clearRect(0, 0, this.width, this.height);
-
-            let menu = document.querySelector("#gameOverMenu");
-            let score = document.querySelector("#score");
-            let scoreGO = document.querySelector("#gameOverScore");
-
-            scoreGO.textContent = this.score;
-
-            menu.style.zIndex = "2";
-            score.style.zIndex = "-1";
-
-            this.buttonEvent(menu, "Restart");
-            return true;
+            this.menuGameOver();
         }
-        return false;
+    }
+
+    menuGameOver() {
+        this.pause();
+        this.ctx.clearRect(0, 0, this.width, this.height);
+
+        let menu = document.querySelector("#gameOverMenu");
+        let score = document.querySelector("#score");
+        let scoreGO = document.querySelector("#gameOverScore");
+
+        scoreGO.textContent = this.score;
+
+        menu.style.zIndex = "2";
+        score.style.zIndex = "-1";
+
+        this.buttonEvent(menu, "Restart");
+        this.stateGameOver = true;
     }
 
     pause() {
@@ -368,11 +393,13 @@ class Game {
 
     findCollision() {
         this.blocks.forEach(block => {
-            if (block.collision(this.doodle.x, this.doodle.y, this.doodle.width, this.doodle.height) && this.doodle.vy > 0) {
-                this.doodle.jump();
+            if (block.collision(this.doodle) && this.doodle.vy > 0) {
+                //si le block est un monstre
+                if(block.type === 6 || block.type === 7 || block.type === 8) this.menuGameOver();
+                else this.doodle.jump();
             }
         });
-        if (this.base.collision(this.doodle.x, this.doodle.y, this.doodle.width, this.doodle.height) && this.base.y < this.height) {
+        if (this.base.collision(this.doodle) && this.base.y < this.height) {
             this.doodle.jump();
         }
     }
@@ -394,7 +421,6 @@ class Game {
     }
 
     moveToDownBlocks() {
-
         let lowerBlock = this.blocks[this.nbBlock - 1];
         //si un block sort du jeu
         if (lowerBlock.y > this.height) {
@@ -430,6 +456,7 @@ class Game {
 
     moveBlocks() {
         this.blocks.forEach(block => {
+            //déplacement Horizontal
             if (block.type === 2 || block.type === 7) {
                 let x = block.x + block.vx
                 if (x + block.width > this.width) {
@@ -439,6 +466,17 @@ class Game {
                     block.vx = Math.abs(block.vx);
                 }
                 block.x = x;
+
+            }
+            //déplacement Vertical
+            if (block.type === 4 || block.type === 8) {
+                block.y += block.vy;
+                block.vTick--;
+                if (block.vTick === 0) {
+                    block.vTick = block.vTickMax;
+                    if (block.vy > 0) block.vy = -block.vy;
+                    else block.vy = Math.abs(block.vy);
+                }
 
             }
         })
@@ -458,7 +496,7 @@ class Game {
          * 8 : monstre qui se déplace verticalement
          */
 
-        if (this.score <= 500) probaType = [1];
+        if (this.score <= 500) probaType = [8];
         else if (this.score <= 1000) probaType = [1, 1, 1, 1, 1, 2, 2];
         else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 7, 7];
 
