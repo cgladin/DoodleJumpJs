@@ -498,7 +498,7 @@ class Game {
          * 8 : monstre qui se déplace verticalement
          */
 
-        if (this.score <= 500) probaType = [3];
+        if (this.score <= 500) probaType = [1];
         else if (this.score <= 1000) probaType = [1, 1, 1, 1, 1, 2, 2];
         else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 7, 7];
 
