@@ -114,9 +114,14 @@ class Doodle extends Entity {
 }
 
 class Block extends Entity {
-    constructor(width, height,type) {
+    constructor(width, height, type) {
         super(0, 0, width, height)
-        this.type=type;
+        this.type = type;
+
+        if (this.type === 2 || this.type === 7) this.vx = 2;
+
+        if (this.type === 4 || this.type === 8) this.vy = 2;
+
         //Sprite clipping 
         this.cx = 0;
         this.cy = 0;
@@ -144,13 +149,13 @@ class Block extends Entity {
 
 class Platform extends Block {
     constructor(type = 1) {
-        super(60, 17.5,type);
+        super(60, 17.5, type);
 
         this.setSpriteClippingByType();
     }
 
     //Sprite clipping
-    setSpriteClippingByType(){
+    setSpriteClippingByType() {
         /*
          * type:
          * 1 : plateforme normale
@@ -159,25 +164,25 @@ class Platform extends Block {
          * 3.5 : animation platforme pourrie
          * 4 : plateforme qui se déplace verticalement
          */
-        if(this.type === 1){
+        if (this.type === 1) {
             this.cx = 0;
             this.cy = 0;
             this.cwidth = 105;
             this.cheight = 31;
         }
-        if(this.type === 2 || this.type === 4 ){
+        if (this.type === 2 || this.type === 4) {
             this.cx = 0;
             this.cy = 60;
             this.cwidth = 105;
             this.cheight = 31;
         }
-        if(this.type === 3){
+        if (this.type === 3) {
             this.cx = 0;
             this.cy = 30;
             this.cwidth = 105;
             this.cheight = 31;
         }
-        if(this.type === 3.5){
+        if (this.type === 3.5) {
             this.cx = 0;
             this.cy = 555;
             this.cwidth = 105;
@@ -188,7 +193,7 @@ class Platform extends Block {
 
 class BasePlatform extends Block {
     constructor(width, height) {
-        super(width, 5,0);
+        super(width, 5, 0);
         //Sprite clipping
         this.cx = 0;
         this.cy = 614;
@@ -200,7 +205,7 @@ class BasePlatform extends Block {
 
 class Monster extends Block {
     constructor(type) {
-        super(50, 60,type);
+        super(50, 60, type);
 
         //Sprite clipping
         this.cx = 0;
@@ -251,6 +256,7 @@ class Game {
         this.blocks.forEach(b => {
             b.draw(this.ctx);
         })
+        this.moveBlocks();
         this.moveDoodle();
         //si le doodle est deplacement vertical
         if (this.doodle.vy < -7 && this.doodle.vy > -15) this.doodle.dir = "left_jump";
@@ -378,7 +384,7 @@ class Game {
 
         if (isAffectByGravity === false) {
             this.moveBase();
-            this.moveBlock();
+            this.moveToDownBlocks();
 
             this.doodle.affectByGravity();
 
@@ -387,7 +393,7 @@ class Game {
 
     }
 
-    moveBlock() {
+    moveToDownBlocks() {
 
         let lowerBlock = this.blocks[this.nbBlock - 1];
         //si un block sort du jeu
@@ -422,6 +428,22 @@ class Game {
         }
     }
 
+    moveBlocks() {
+        this.blocks.forEach(block => {
+            if (block.type === 2 || block.type === 7) {
+                let x = block.x + block.vx
+                if (x + block.width > this.width) {
+                    block.vx = -block.vx;
+                }
+                if (x < 0) {
+                    block.vx = Math.abs(block.vx);
+                }
+                block.x = x;
+
+            }
+        })
+    }
+
     spawnBlock() {
         let probaType;
         /*
@@ -442,9 +464,9 @@ class Game {
 
         let type = probaType[Math.floor(Math.random() * probaType.length)];
 
-        if(type >= 1 && type < 6) return new Platform(type);
+        if (type >= 1 && type < 6) return new Platform(type);
 
-        if(type >= 6 && type <= 8) return new Monster(type);
+        if (type >= 6 && type <= 8) return new Monster(type);
 
     }
 
