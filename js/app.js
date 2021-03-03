@@ -278,10 +278,11 @@ class Game {
         })
         this.moveBlocks();
         this.moveDoodle();
-        //si le doodle est deplacement vertical
-        if (this.doodle.vy < -7 && this.doodle.vy > -15) this.doodle.dir = "left_jump";
-        //si le doodle est deplacement vertical
-        if (this.doodle.vy < -7 && this.doodle.vy > -15) this.doodle.dir = "right_jump";
+
+        // if (this.doodle.vy > -3 && this.doodle.dirSprite === "left") this.doodle.dirSprite = "left_jump";
+        // else this.doodle.dirSprite = "left";
+        // if (this.doodle.vy > -2 && this.doodle.dirSprite === "right") this.doodle.dirSprite = "right_jump" ;
+        // else this.doodle.dirSprite = "right";
 
         this.updateScore();
 
@@ -392,11 +393,22 @@ class Game {
     }
 
     findCollision() {
-        this.blocks.forEach(block => {
+        this.blocks.forEach((block,index)  => {
+            this.clearBlockDestroyed(block,index)
             if (block.collision(this.doodle) && this.doodle.vy > 0) {
                 //si le block est un monstre
-                if(block.type === 6 || block.type === 7 || block.type === 8) this.menuGameOver();
-                else this.doodle.jump();
+                if(block.type === 6 || block.type === 7 || block.type === 8) {
+                    this.menuGameOver();
+                }
+                else {
+                    if(block.type === 3 ) {
+                        block.type+=0.5;
+                        block.renderTick=15;
+                        block.setSpriteClippingByType();
+                    }
+
+                    this.doodle.jump();
+                }
             }
         });
         if (this.base.collision(this.doodle) && this.base.y < this.height) {
@@ -426,17 +438,7 @@ class Game {
         if (lowerBlock.y > this.height) {
             this.blocks.pop()
 
-            //ajoute au début du tableau
-            this.blocks.unshift(this.spawnBlock());
-
-            let yPrevious = this.maxplateforme - this.tailleLastPlateforme;
-            let yMax = yPrevious - this.doodle.jumpHeight;
-            let x = Math.floor(Math.random() * (this.width - this.blocks[0].width));
-            let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
-            this.blocks[0].setXAndY(x, y);
-            this.maxplateforme = y;
-            this.tailleLastPlateforme = this.blocks[0].height;
-
+            this.addBlock();
         }
         if (this.doodle.vy < 0) {
             this.maxplateforme -= this.doodle.vy;
@@ -496,7 +498,7 @@ class Game {
          * 8 : monstre qui se déplace verticalement
          */
 
-        if (this.score <= 500) probaType = [8];
+        if (this.score <= 500) probaType = [3];
         else if (this.score <= 1000) probaType = [1, 1, 1, 1, 1, 2, 2];
         else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 7, 7];
 
@@ -506,6 +508,28 @@ class Game {
 
         if (type >= 6 && type <= 8) return new Monster(type);
 
+    }
+
+    addBlock(){
+        //ajoute au début du tableau
+        this.blocks.unshift(this.spawnBlock());
+
+        let yPrevious = this.maxplateforme - this.tailleLastPlateforme;
+        let yMax = yPrevious - this.doodle.jumpHeight;
+        let x = Math.floor(Math.random() * (this.width - this.blocks[0].width));
+        let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
+        this.blocks[0].setXAndY(x, y);
+        this.maxplateforme = y;
+        this.tailleLastPlateforme = this.blocks[0].height;
+    }
+
+    clearBlockDestroyed(block,index){
+        if(block.type === 3.5 && block.renderTick === 0){
+            this.blocks.splice(index,1);
+            this.addBlock();
+        } else  if(block.type === 3.5){
+            block.renderTick--;
+        }
     }
 
     updateScore() {
