@@ -9,6 +9,20 @@ class Entity {
         this.height = height;
 
         this.img = document.getElementById("sprite");
+
+        //Sprite clipping
+        this.cx = 0;
+        this.cy = 0;
+        this.cwidth = 0;
+        this.cheight = 0;
+    }
+
+    draw(ctx) {
+        ctx.drawImage(
+            this.img,
+            this.cx, this.cy, this.cwidth, this.cheight,
+            this.x, this.y, this.width, this.height
+        );
     }
 
 }
@@ -36,7 +50,7 @@ class Doodle extends Entity {
 
         this.jumpHeight = 127; //car -5 - 0.1 à chaque frame il parcours 127.5 quand vy =0
 
-        this.isDead=false;
+        this.isDead = false;
 
         this.dirSprite = "right";
 
@@ -53,11 +67,7 @@ class Doodle extends Entity {
 
     draw(ctx) {
         this.cy = this.clipDirection[this.dirSprite];
-        ctx.drawImage(
-            this.img,
-            this.cx, this.cy, this.cwidth, this.cheight,
-            this.x, this.y, this.width, this.height
-        );
+        super.draw(ctx);
     }
 
     moveX(width) {
@@ -113,6 +123,16 @@ class Doodle extends Entity {
         //déplace de 5 pixel à chaque frame vers le haut
         this.vy = -5;
     }
+    jumpHigh() {
+        this.vy = -10;
+    }
+    jumpVeryhigh() {
+        this.vy = -20;
+    }
+
+    setDead() {
+        this.isDead = true;
+    }
 }
 
 class Block extends Entity {
@@ -127,20 +147,6 @@ class Block extends Entity {
             this.vTick = this.vTickMax;
             this.vy = 0.4;
         }
-
-        //Sprite clipping 
-        this.cx = 0;
-        this.cy = 0;
-        this.cwidth = 0;
-        this.cheight = 0;
-    }
-
-    draw(ctx) {
-        ctx.drawImage(
-            this.img,
-            this.cx, this.cy, this.cwidth, this.cheight,
-            this.x, this.y, this.width, this.height
-        );
     }
 
     collision(doodle) {
@@ -151,16 +157,14 @@ class Block extends Entity {
         this.x = x;
         this.y = y;
     }
-
-    setDead() {
-        this.isDead=true;
-    }
 }
 
 class Platform extends Block {
     constructor(type = 1) {
         super(60, 17.5, type);
-
+        if (this.type === 5) {
+            this.powerUp = new PowerUp();
+        }
         this.setSpriteClippingByType();
     }
 
@@ -174,7 +178,7 @@ class Platform extends Block {
          * 3.5 : animation platforme pourrie
          * 4 : plateforme qui se déplace verticalement
          */
-        if (this.type === 1) {
+        if (this.type === 1 || this.type === 5) {
             this.cx = 0;
             this.cy = 0;
             this.cwidth = 105;
@@ -198,6 +202,60 @@ class Platform extends Block {
             this.cwidth = 105;
             this.cheight = 55;
         }
+    }
+
+    draw(ctx) {
+        super.draw(ctx);
+        if(this.type === 5) {
+            if(this.powerUp.powerUpType === 1) this.powerUp.setXAndY(this.x+10,this.y-this.height+5)
+            if(this.powerUp.powerUpType === 2)this.powerUp.setXAndY(Math.floor(this.x+10),this.y-this.height)
+            this.powerUp.draw(ctx)
+        }
+    }
+}
+
+class PowerUp extends Entity {
+    constructor() {
+        super(0, 0, 0, 0);
+        this.randomPowerUp();
+        this.clipPowerUp();
+    }
+
+    randomPowerUp() {
+        /*
+        *type:
+        * 1 : ressort
+        * 2 :tranpoline
+        * 3 : casquette
+        * 4 : jetpack
+        * 5 : fusée
+         */
+        //let probaType = [1,1,1,1,1,2,2,2,2,3,3,3,4,4,5];
+        let probaType = [1, 1, 1, 1, 1, 2, 2];
+        this.powerUpType = probaType[Math.floor(Math.random() * probaType.length)];
+    }
+
+    clipPowerUp() {
+        if (this.powerUpType === 1) {
+            this.height = 15;
+            this.width = 10;
+            this.cx = 0;
+            this.cy = 470;
+            this.cwidth = 43;
+            this.cheight = 28;
+        }
+        if (this.powerUpType === 2) {
+            this.height = 20;
+            this.width = 40;
+            this.cx = 120;
+            this.cy = 620;
+            this.cwidth = 74;
+            this.cheight = 30;
+        }
+    }
+    setXAndY(x,y){
+        this.x=x;
+        this.y=y;
     }
 }
 
@@ -223,12 +281,14 @@ class Monster extends Block {
         this.cwidth = 110;
         this.cheight = 140;
     }
+
     collision(doodle) {
-        if(((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width)) && doodle.y <= this.y+this.height){
+        if (((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width))
+            && ((doodle.y + doodle.height - 6 >= this.y && doodle.y + doodle.height - 6 <= this.y + this.height) || (doodle.y >= this.y && doodle.y <= this.y + this.height))) {
             doodle.setDead();
             return true;
         }
-        return ((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width)) && (doodle.y - doodle.height <= this.y && doodle.y + doodle.height >= this.y - this.height);
+        super.collision();
     }
 
 }
@@ -256,7 +316,7 @@ class Game {
 
         this.event();
 
-        this.doodle = new Doodle(Math.floor(this.width / 2) - 40, this.height - 140);
+        this.doodle = new Doodle(Math.floor(this.width / 2) - 40, Math.floor(this.height / 2));
 
         this.blockInit();
 
@@ -287,7 +347,7 @@ class Game {
         this.updateScore();
 
         this.gameOver()
-
+        console.log(this.doodle.vy)
         if (this.stateGameOver !== true)
             this.animationID = window.requestAnimationFrame(this.start.bind(this));
     }
@@ -393,21 +453,27 @@ class Game {
     }
 
     findCollision() {
-        this.blocks.forEach((block,index)  => {
-            this.clearBlockDestroyed(block,index)
+        this.blocks.forEach((block, index) => {
+            this.clearBlockDestroyed(block, index)
             if (block.collision(this.doodle) && this.doodle.vy > 0) {
                 //si le block est un monstre
-                if(block.type === 6 || block.type === 7 || block.type === 8) {
+                if ((block.type === 6 || block.type === 7 || block.type === 8) && this.doodle.isDead === true) {
                     this.menuGameOver();
-                }
-                else {
-                    if(block.type === 3 ) {
-                        block.type+=0.5;
-                        block.renderTick=15;
+                } else {
+                    if (block.type === 3) {
+                        block.type += 0.5;
+                        block.renderTick = 15;
                         block.setSpriteClippingByType();
                     }
+                    if (block.type === 6) console.log(this.doodle.y, block.y)
 
-                    this.doodle.jump();
+                    if(block.powerUp && block.powerUp.powerUpType === 1){
+                        this.doodle.jumpHigh()
+                    } else if(block.powerUp && block.powerUp.powerUpType === 2){
+                        this.doodle.jumpVeryhigh();
+                    } else {
+                        this.doodle.jump();
+                    }
                 }
             }
         });
@@ -498,9 +564,11 @@ class Game {
          * 8 : monstre qui se déplace verticalement
          */
 
-        if (this.score <= 500) probaType = [1];
+        //TODO: modifier proba
+        if (this.score <= 500) probaType = [5];
         else if (this.score <= 1000) probaType = [1, 1, 1, 1, 1, 2, 2];
         else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 7, 7];
+        else probaType =[1];
 
         let type = probaType[Math.floor(Math.random() * probaType.length)];
 
@@ -510,7 +578,7 @@ class Game {
 
     }
 
-    addBlock(){
+    addBlock() {
         //ajoute au début du tableau
         this.blocks.unshift(this.spawnBlock());
 
@@ -523,11 +591,11 @@ class Game {
         this.tailleLastPlateforme = this.blocks[0].height;
     }
 
-    clearBlockDestroyed(block,index){
-        if(block.type === 3.5 && block.renderTick === 0){
-            this.blocks.splice(index,1);
+    clearBlockDestroyed(block, index) {
+        if (block.type === 3.5 && block.renderTick === 0) {
+            this.blocks.splice(index, 1);
             this.addBlock();
-        } else  if(block.type === 3.5){
+        } else if (block.type === 3.5) {
             block.renderTick--;
         }
     }
