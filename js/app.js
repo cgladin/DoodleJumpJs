@@ -52,6 +52,8 @@ class Doodle extends Entity {
 
         this.isDead = false;
 
+        this.powerUpTime=0
+
         this.dirSprite = "right";
 
         //clipping de l'image en fonction de la direction
@@ -67,7 +69,33 @@ class Doodle extends Entity {
 
     draw(ctx) {
         this.cy = this.clipDirection[this.dirSprite];
-        super.draw(ctx);
+        //affiche la fusée
+        if(this.powerUpType && this.powerUpType === 5){
+            ctx.drawImage(
+                this.img,
+                215, 10, 170, 377,
+                this.x, this.y, 60, 150
+            );
+            //affiche la rocket
+        } else if(this.powerUpType && this.powerUpType === 4){
+            this.dirSprite = "left";
+            ctx.drawImage(
+                this.img,
+                127, 393, 44, 122,
+                this.x+this.width-15, this.y, 35, 80
+            );
+            super.draw(ctx);
+            //affiche la casquette
+        } else if(this.powerUpType && this.powerUpType === 3){
+            super.draw(ctx);
+            ctx.drawImage(
+                this.img,
+                126, 76, 60, 38,
+                this.x+15, this.y-Math.floor(this.height/2)+5, 30, 20
+            );
+        } else {
+            super.draw(ctx);
+        }
     }
 
     moveX(width) {
@@ -123,9 +151,11 @@ class Doodle extends Entity {
         //déplace de 5 pixel à chaque frame vers le haut
         this.vy = -5;
     }
+
     jumpHigh() {
         this.vy = -10;
     }
+
     jumpVeryhigh() {
         this.vy = -20;
     }
@@ -150,7 +180,7 @@ class Block extends Entity {
     }
 
     collision(doodle) {
-        return ((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width)) && (doodle.y - doodle.height <= this.y && doodle.y + doodle.height >= this.y );
+        return ((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width)) && (doodle.y - doodle.height <= this.y && doodle.y + doodle.height >= this.y);
     }
 
     setXAndY(x, y) {
@@ -206,9 +236,11 @@ class Platform extends Block {
 
     draw(ctx) {
         super.draw(ctx);
-        if(this.type === 5) {
-            if(this.powerUp.powerUpType === 1) this.powerUp.setXAndY(this.x+10,this.y-this.height+5)
-            if(this.powerUp.powerUpType === 2)this.powerUp.setXAndY(Math.floor(this.x+10),this.y-this.height)
+        if (this.type === 5) {
+            if (this.powerUp.powerUpType === 1) this.powerUp.setXAndY(this.x + 10, this.y - this.height + 5);
+            else if (this.powerUp.powerUpType === 4) this.powerUp.setXAndY(this.x + 10, this.y - this.height-10);
+            else if (this.powerUp.powerUpType === 5) this.powerUp.setXAndY(this.x, this.y - this.height-80);
+            else this.powerUp.setXAndY(this.x + 10, this.y - this.height);
             this.powerUp.draw(ctx)
         }
     }
@@ -217,7 +249,8 @@ class Platform extends Block {
 class PowerUp extends Entity {
     constructor() {
         super(0, 0, 0, 0);
-        this.randomPowerUp();
+        //this.randomPowerUp();
+        this.powerUpType=3;
         this.clipPowerUp();
     }
 
@@ -225,17 +258,17 @@ class PowerUp extends Entity {
         /*
         *type:
         * 1 : ressort
-        * 2 :tranpoline
+        * 2 : trampoline
         * 3 : casquette
         * 4 : jetpack
         * 5 : fusée
          */
-        //let probaType = [1,1,1,1,1,2,2,2,2,3,3,3,4,4,5];
-        let probaType = [1, 1, 1, 1, 1, 2, 2];
+        let probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 6];
         this.powerUpType = probaType[Math.floor(Math.random() * probaType.length)];
     }
 
     clipPowerUp() {
+        //ressort
         if (this.powerUpType === 1) {
             this.height = 15;
             this.width = 10;
@@ -244,6 +277,7 @@ class PowerUp extends Entity {
             this.cwidth = 43;
             this.cheight = 28;
         }
+        //trampoline
         if (this.powerUpType === 2) {
             this.height = 20;
             this.width = 40;
@@ -252,10 +286,56 @@ class PowerUp extends Entity {
             this.cwidth = 74;
             this.cheight = 30;
         }
+        //casquette
+        if (this.powerUpType === 3) {
+            this.height = 20;
+            this.width = 30;
+            this.cx = 126;
+            this.cy = 19;
+            this.cwidth = 60;
+            this.cheight = 38;
+        }
+        //jetpack
+        if (this.powerUpType === 4) {
+            this.height = 30;
+            this.width = 20;
+            this.cx = 121;
+            this.cy = 522;
+            this.cwidth = 50;
+            this.cheight = 74;
+        }
+        //jetpack animation
+        if (this.powerUpType === 4.5) {
+            this.height = 80;
+            this.width = 35;
+            this.cx = 127;
+            this.cy = 393;
+            this.cwidth = 44;
+            this.cheight = 122;
+        }
+        //fusée
+        if (this.powerUpType === 5) {
+            this.height = 110;
+            this.width = 60;
+            this.cx = 215;
+            this.cy = 421;
+            this.cwidth = 170;
+            this.cheight = 256;
+        }
+        //potion
+        if (this.powerUpType === 6) {
+            this.height = 30;
+            this.width = 25;
+            this.cx = 130;
+            this.cy = 679;
+            this.cwidth = 60;
+            this.cheight = 80;
+        }
     }
-    setXAndY(x,y){
-        this.x=x;
-        this.y=y;
+
+    setXAndY(x, y) {
+        this.x = x;
+        this.y = y;
     }
 }
 
@@ -284,12 +364,11 @@ class Monster extends Block {
 
     collision(doodle) {
         //TODO : fix nombre magique
-        if (((doodle.x  >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width))
-            && ((doodle.y - doodle.height  <= this.y && doodle.y - doodle.height >= this.y - this.height) || (doodle.y -30<= this.y && doodle.y -30>= this.y - this.height))) {
+        if (((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width))
+            && ((doodle.y - doodle.height <= this.y && doodle.y - doodle.height >= this.y - this.height) || (doodle.y - 30 <= this.y && doodle.y - 30 >= this.y - this.height))) {
             doodle.setDead();
             return true;
-        }
-        else {
+        } else {
             return super.collision(doodle);
         }
     }
@@ -444,9 +523,8 @@ class Game {
             let yMax = yPrevious + this.doodle.jumpHeight;
 
             let x = Math.floor(Math.random() * (this.width - this.blocks[i].width));
-            let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
 
-            this.blocks[i].setXAndY(x, y);
+            this.blocks[i].setXAndY(x, yMax);
 
         }
         this.maxplateforme = this.blocks[0].y;
@@ -457,20 +535,39 @@ class Game {
     findCollision() {
         this.blocks.forEach((block, index) => {
             this.clearBlockDestroyed(block, index)
-            if (block.collision(this.doodle) && (this.doodle.vy > 0 || (block.type >= 6 && block.type <=8))) {
+            if (block.collision(this.doodle) && this.doodle.vy > 0 /*|| (block.type >= 6 && block.type <= 8)*/) {
                 //si le block est un monstre
                 if ((block.type === 6 || block.type === 7 || block.type === 8) && this.doodle.isDead === true) {
                     this.menuGameOver();
                 } else {
+                    //block pourrie on met l'animation
                     if (block.type === 3) {
                         block.type += 0.5;
                         block.renderTick = 15;
                         block.setSpriteClippingByType();
                     }
 
-                    if(block.powerUp && block.powerUp.powerUpType === 1){
+
+                    //casquette
+                    if (block.powerUp && block.powerUp.powerUpType === 3) {
+                        this.doodle.powerUpTime=2000;
+                        this.doodle.powerUpType=3;
+                    }
+                    //jetpack
+                    if (block.powerUp && block.powerUp.powerUpType === 4) {
+                        this.doodle.powerUpTime=4000;
+                        this.doodle.powerUpType=4;
+                    }
+                    //fusée
+                    if (block.powerUp && block.powerUp.powerUpType === 5) {
+                        this.doodle.powerUpTime=6000;
+                        this.doodle.powerUpType=5;
+                    }
+
+                    //différent saut
+                    if (block.powerUp && block.powerUp.powerUpType === 1) {
                         this.doodle.jumpHigh()
-                    } else if(block.powerUp && block.powerUp.powerUpType === 2){
+                    } else if (block.powerUp && block.powerUp.powerUpType === 2) {
                         this.doodle.jumpVeryhigh();
                     } else {
                         this.doodle.jump();
@@ -486,13 +583,23 @@ class Game {
     moveDoodle() {
         //on envoie les dimensions pour les contrainte de déplacement
         this.doodle.moveX(this.width);
+
         let isAffectByGravity = this.doodle.isAffectByGravity(this.height);
 
         if (isAffectByGravity === false) {
             this.moveBase();
             this.moveToDownBlocks();
 
-            this.doodle.affectByGravity();
+            //si doodle affecter par un powerup
+            if(this.doodle.powerUpTime > 0){
+                setTimeout(()=>{
+                    this.doodle.affectByGravity();
+                    this.doodle.powerUpTime=0;
+                    this.doodle.powerUpType=0;
+                },this.doodle.powerUpTime)
+            } else {
+                this.doodle.affectByGravity();
+            }
 
             this.score++;
         }
@@ -565,11 +672,11 @@ class Game {
          * 8 : monstre qui se déplace verticalement
          */
 
-        //TODO: modifier proba
-        if (this.score <= 500) probaType = [5,6];
+        if (this.score <= 500) probaType = [5];
         else if (this.score <= 1000) probaType = [1, 1, 1, 1, 1, 2, 2];
-        else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 7, 7];
-        else probaType =[1];
+        else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 6, 6];
+        else if (this.score <= 2000) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 6, 6, 3, 3, 3, 4, 4, 4];
+        else probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 6, 6, 3, 3, 3, 4, 4, 4, 7, 7, 8, 8, 5];
 
         let type = probaType[Math.floor(Math.random() * probaType.length)];
 
@@ -608,4 +715,4 @@ class Game {
 
 }
 
-let game = new Game();
+new Game();
