@@ -467,7 +467,6 @@ class Game {
                         block.renderTick = 15;
                         block.setSpriteClippingByType();
                     }
-                    if (block.type === 6) 
 
                     if(block.powerUp && block.powerUp.powerUpType === 1){
                         this.doodle.jumpHigh()
