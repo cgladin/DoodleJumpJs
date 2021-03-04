@@ -150,7 +150,7 @@ class Block extends Entity {
     }
 
     collision(doodle) {
-        return ((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width)) && (doodle.y - doodle.height <= this.y && doodle.y + doodle.height >= this.y - this.height);
+        return ((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width)) && (doodle.y - doodle.height <= this.y && doodle.y + doodle.height >= this.y );
     }
 
     setXAndY(x, y) {
@@ -283,12 +283,15 @@ class Monster extends Block {
     }
 
     collision(doodle) {
-        if (((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width))
-            && ((doodle.y + doodle.height - 6 >= this.y && doodle.y + doodle.height - 6 <= this.y + this.height) || (doodle.y >= this.y && doodle.y <= this.y + this.height))) {
+        //TODO : fix nombre magique
+        if (((doodle.x  >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width))
+            && ((doodle.y - doodle.height  <= this.y && doodle.y - doodle.height >= this.y - this.height) || (doodle.y -30<= this.y && doodle.y -30>= this.y - this.height))) {
             doodle.setDead();
             return true;
         }
-        super.collision();
+        else {
+            return super.collision(doodle);
+        }
     }
 
 }
@@ -347,7 +350,6 @@ class Game {
         this.updateScore();
 
         this.gameOver()
-        console.log(this.doodle.vy)
         if (this.stateGameOver !== true)
             this.animationID = window.requestAnimationFrame(this.start.bind(this));
     }
@@ -455,7 +457,7 @@ class Game {
     findCollision() {
         this.blocks.forEach((block, index) => {
             this.clearBlockDestroyed(block, index)
-            if (block.collision(this.doodle) && this.doodle.vy > 0) {
+            if (block.collision(this.doodle) && (this.doodle.vy > 0 || (block.type >= 6 && block.type <=8))) {
                 //si le block est un monstre
                 if ((block.type === 6 || block.type === 7 || block.type === 8) && this.doodle.isDead === true) {
                     this.menuGameOver();
@@ -465,7 +467,7 @@ class Game {
                         block.renderTick = 15;
                         block.setSpriteClippingByType();
                     }
-                    if (block.type === 6) console.log(this.doodle.y, block.y)
+                    if (block.type === 6) 
 
                     if(block.powerUp && block.powerUp.powerUpType === 1){
                         this.doodle.jumpHigh()
@@ -565,7 +567,7 @@ class Game {
          */
 
         //TODO: modifier proba
-        if (this.score <= 500) probaType = [5];
+        if (this.score <= 500) probaType = [5,6];
         else if (this.score <= 1000) probaType = [1, 1, 1, 1, 1, 2, 2];
         else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 7, 7];
         else probaType =[1];
