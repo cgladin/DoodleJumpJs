@@ -706,6 +706,7 @@ class Game {
 
         let yPrevious = this.maxplateforme - this.tailleLastPlateforme;
         let yMax = yPrevious - this.doodle.jumpHeight;
+        if (this.blocks[0] instanceof Monster) yMax += this.blocks[0].height
         let x = Math.floor(Math.random() * (this.width - this.blocks[0].width));
         let y = Math.floor(Math.random() * (yPrevious - yMax) + yMax);
         this.blocks[0].setXAndY(x, y);

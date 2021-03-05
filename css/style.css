@@ -5,7 +5,7 @@ h1,h3,p, .button {
 body {
     display: flex;
     justify-content: center;
-    background-color: grey;
+    background-image: url("../asset/bg-site.jpg");
 }
 .body{
     margin: 50px auto 0;
@@ -55,5 +55,6 @@ body {
     position: absolute;
     left: -400px;
     top:0;
+    color: white;
 }
 
