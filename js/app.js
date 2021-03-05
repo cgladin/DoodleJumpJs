@@ -686,7 +686,7 @@ class Game {
          * 8 : monstre qui se déplace verticalement
          */
         //Proba d'apparition de chaque type
-        if (this.score <= 500) probaType = [1];
+        if (this.score <= 500) probaType = [1,1,1,1,3];
         else if (this.score <= 1000) probaType = [1, 1, 1, 1, 1, 2, 2];
         else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 6, 6];
         else if (this.score <= 2000) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 6, 6, 3, 3, 3, 4, 4, 4];
