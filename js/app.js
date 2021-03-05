@@ -249,8 +249,7 @@ class Platform extends Block {
 class PowerUp extends Entity {
     constructor() {
         super(0, 0, 0, 0);
-        //this.randomPowerUp();
-        this.powerUpType=3;
+        this.randomPowerUp();
         this.clipPowerUp();
     }
 
@@ -262,6 +261,7 @@ class PowerUp extends Entity {
         * 3 : casquette
         * 4 : jetpack
         * 5 : fusée
+        * 6 : potion
          */
         let probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 6];
         this.powerUpType = probaType[Math.floor(Math.random() * probaType.length)];
@@ -364,8 +364,9 @@ class Monster extends Block {
 
     collision(doodle) {
         //TODO : fix nombre magique
-        if (((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width))
-            && ((doodle.y - doodle.height <= this.y && doodle.y - doodle.height >= this.y - this.height) || (doodle.y - 30 <= this.y && doodle.y - 30 >= this.y - this.height))) {
+        if ((((doodle.x >= this.x && doodle.x <= this.x + this.width) || (doodle.x + doodle.width >= this.x && doodle.x + doodle.width <= this.x + this.width))
+            && ((doodle.y - doodle.height <= this.y && doodle.y - doodle.height >= this.y - this.height) || (doodle.y - 30 <= this.y && doodle.y - 30 >= this.y - this.height)))
+            && doodle.powerUpType !== 6) {
             doodle.setDead();
             return true;
         } else {
@@ -525,7 +526,6 @@ class Game {
             let x = Math.floor(Math.random() * (this.width - this.blocks[i].width));
 
             this.blocks[i].setXAndY(x, yMax);
-
         }
         this.maxplateforme = this.blocks[0].y;
         this.tailleLastPlateforme = this.blocks[0].height;
@@ -535,7 +535,7 @@ class Game {
     findCollision() {
         this.blocks.forEach((block, index) => {
             this.clearBlockDestroyed(block, index)
-            if (block.collision(this.doodle) && this.doodle.vy > 0 /*|| (block.type >= 6 && block.type <= 8)*/) {
+            if (block.collision(this.doodle) && this.doodle.vy > 0) {
                 //si le block est un monstre
                 if ((block.type === 6 || block.type === 7 || block.type === 8) && this.doodle.isDead === true) {
                     this.menuGameOver();
@@ -546,22 +546,29 @@ class Game {
                         block.renderTick = 15;
                         block.setSpriteClippingByType();
                     }
-
-
                     //casquette
                     if (block.powerUp && block.powerUp.powerUpType === 3) {
+                        block.type=1;
                         this.doodle.powerUpTime=2000;
                         this.doodle.powerUpType=3;
                     }
                     //jetpack
                     if (block.powerUp && block.powerUp.powerUpType === 4) {
+                        block.type=1;
                         this.doodle.powerUpTime=4000;
                         this.doodle.powerUpType=4;
                     }
                     //fusée
                     if (block.powerUp && block.powerUp.powerUpType === 5) {
+                        block.type=1;
                         this.doodle.powerUpTime=6000;
                         this.doodle.powerUpType=5;
+                    }
+                    //potion
+                    if (block.powerUp && block.powerUp.powerUpType === 6) {
+                        block.type=1;
+                        this.doodle.powerUpTime=15000;
+                        this.doodle.powerUpType=6;
                     }
 
                     //différent saut
@@ -591,14 +598,21 @@ class Game {
             this.moveToDownBlocks();
 
             //si doodle affecter par un powerup
-            if(this.doodle.powerUpTime > 0){
+            if(this.doodle.powerUpTime > 0 && this.doodle.powerUpType !== 6){
                 setTimeout(()=>{
-                    this.doodle.affectByGravity();
                     this.doodle.powerUpTime=0;
                     this.doodle.powerUpType=0;
                 },this.doodle.powerUpTime)
+
             } else {
                 this.doodle.affectByGravity();
+                //si un affecté par une potion
+                if(this.doodle.powerUpType && this.doodle.powerUpType === 6) {
+                    setTimeout(()=>{
+                        this.doodle.powerUpTime=0;
+                        this.doodle.powerUpType=0;
+                    },this.doodle.powerUpTime)
+                }
             }
 
             this.score++;
@@ -671,8 +685,8 @@ class Game {
          * 7 : monstre qui se déplace horizontallement
          * 8 : monstre qui se déplace verticalement
          */
-
-        if (this.score <= 500) probaType = [5];
+        //Proba d'apparition de chaque type
+        if (this.score <= 500) probaType = [1];
         else if (this.score <= 1000) probaType = [1, 1, 1, 1, 1, 2, 2];
         else if (this.score <= 1500) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 6, 6];
         else if (this.score <= 2000) probaType = [1, 1, 1, 1, 1, 2, 2, 2, 2, 6, 6, 3, 3, 3, 4, 4, 4];
